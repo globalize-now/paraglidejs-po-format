@@ -23,8 +23,8 @@ Add the plugin and a `pathPattern` to your `project.inlang/settings.json`. The
   "baseLocale": "en",
   "locales": ["en", "de", "fr"],
   "modules": [
-    // …or a CDN URL once published, e.g.
-    // "https://cdn.jsdelivr.net/npm/@globalize-now/paraglidejs-po-format/dist/index.js"
+    "https://cdn.jsdelivr.net/npm/@globalize-now/paraglidejs-po-format/dist/index.js",
+    // …alongside any other inlang modules you use.
   ],
   "plugin.globalizeNow.po": {
     "pathPattern": "./messages/{locale}.po",
@@ -67,7 +67,9 @@ the displayed number and the plural selection share the same variable.
 
 Entries with an empty `msgstr` (a partial PO or a `.pot` template) are skipped, so
 the message falls back to the base locale at runtime instead of rendering an empty
-string.
+string. A plural entry is treated the same way if **any** of its forms is
+untranslated: the whole entry is skipped (rather than rendering an empty string for
+one CLDR category), so it falls back to the base locale until every form is filled.
 
 ## Scope & limitations
 

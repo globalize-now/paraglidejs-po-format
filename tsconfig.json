@@ -8,8 +8,9 @@
     "rootDir": "src",
     "strict": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    // No declaration maps: they'd point at `src/`, which isn't published.
+    // JS source maps come from esbuild (self-contained via inlined sources).
+    "declarationMap": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

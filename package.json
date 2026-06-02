@@ -28,7 +28,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node build.js && tsc --emitDeclarationOnly",
+    "prepare": "npm run build",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && node build.js && tsc --emitDeclarationOnly",
     "dev": "node build.js --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -45,14 +47,14 @@
     "@inlang/sdk": "^2.9.3",
     "@sinclair/typebox": "^0.31.17",
     "@types/gettext-parser": "^9.0.0",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.28.0",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.8"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   }
 }

@@ -8,6 +8,9 @@ import esbuild from "esbuild";
  * Target is Node: Paraglide compiles translations at build time in Node, and
  * gettext-parser depends on Node built-ins (node:buffer/stream, iconv-lite).
  * This plugin is therefore not intended for pure-browser plugin hosts.
+ *
+ * `target` is the lowest currently-supported Node LTS (see `engines` in
+ * package.json) so the emitted bundle runs on every supported runtime.
  */
 const options = {
   entryPoints: ["src/index.ts"],
@@ -15,7 +18,7 @@ const options = {
   bundle: true,
   format: "esm",
   platform: "node",
-  target: "node18",
+  target: "node22",
   minify: process.env.NODE_ENV === "production",
   sourcemap: true,
   // gettext-parser's transitive CJS deps (iconv-lite/safer-buffer) do a dynamic

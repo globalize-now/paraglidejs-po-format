@@ -118,6 +118,25 @@ describe("importFiles", () => {
     expect(bundles.map((b) => b.id)).toEqual(["done"]);
   });
 
+  it("skips a partially translated plural so it falls back to the base locale", async () => {
+    // msgstr[0] translated, msgstr[1] (the "other"/catch-all form) left empty.
+    // Importing it would give the catch-all variant an empty pattern.
+    const po = [
+      'msgid ""',
+      'msgstr ""',
+      '"Plural-Forms: nplurals=2; plural=(n != 1);\\n"',
+      "",
+      'msgid "{count} apple"',
+      'msgid_plural "{count} apples"',
+      'msgstr[0] "{count} Apfel"',
+      'msgstr[1] ""',
+    ].join("\n");
+    const { bundles, messages, variants } = await importFiles({ files: [file("de", po)], settings });
+    expect(bundles).toEqual([]);
+    expect(messages).toEqual([]);
+    expect(variants).toEqual([]);
+  });
+
   it("skips the PO header entry", async () => {
     const po = ['msgid ""', 'msgstr ""', '"Project-Id-Version: x\\n"'].join("\n");
     const { bundles } = await importFiles({ files: [file("en", po)], settings });

@@ -37,10 +37,11 @@ export const importFiles: NonNullable<(typeof plugin)["importFiles"]> = async ({
         const id = bundleId(context || undefined, msgid);
         const isPlural = typeof entry.msgid_plural === "string" && entry.msgid_plural.length > 0;
 
-        // Skip untranslated entries (empty msgstr, e.g. in a partial PO or a .pot
-        // template). Importing an empty pattern would shadow the base-locale
-        // fallback with an empty string at runtime.
-        if (entry.msgstr.every((value) => value === undefined || value === "")) continue;
+        // Skip untranslated entries so the message falls back to the base locale at
+        // runtime instead of rendering an empty string. For a singular that means an
+        // empty `msgstr`; for a plural, ANY empty form would leave one CLDR category
+        // (often the catch-all) rendering "", so we require every form to be present.
+        if (isUntranslated(entry.msgstr, isPlural)) continue;
 
         const result = isPlural
           ? parsePluralEntry(id, file.locale, entry.msgstr, pluralFormsHeader)
@@ -139,8 +140,18 @@ function addDeclaration(declarations: Declaration[], declaration: Declaration): 
   declarations.push(declaration);
 }
 
+/**
+ * Whether a PO entry is untranslated and should be skipped. A singular needs a
+ * non-empty `msgstr`; a plural needs every form translated (a missing form would
+ * leave a CLDR category rendering an empty string instead of falling back).
+ */
+function isUntranslated(msgstr: string[], isPlural: boolean): boolean {
+  const isEmpty = (value: string | undefined) => value === undefined || value === "";
+  if (isPlural) return msgstr.length === 0 || msgstr.some(isEmpty);
+  return isEmpty(msgstr[0]);
+}
+
 function headerValue(headers: Record<string, string> | undefined, name: string): string | undefined {
-  if (!headers) return undefined;
-  // gettext-parser lowercases header names.
-  return headers[name] ?? headers[name.toLowerCase()];
+  // gettext-parser lowercases header names, so we look up the lowercase form.
+  return headers?.[name.toLowerCase()];
 }
