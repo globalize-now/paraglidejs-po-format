@@ -1,15 +1,21 @@
 import type { Declaration, Pattern } from "@inlang/sdk";
+import { inputVariable } from "./declarations.js";
 
 const PLACEHOLDER_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /**
  * Parses a translation string with brace placeholders (`"Hello {name}"`) into an
- * inlang {@link Pattern} (an array of `text` / `expression` nodes).
+ * inlang {@link Pattern} (an array of `text` / `expression` nodes). This is the
+ * default ("plain") message parser; ICU MessageFormat is opt-in via the
+ * `messageFormat: "icu"` setting (see {@link parseIcuMessage}).
  *
  * - `{name}` becomes an `expression` wrapping a `variable-reference`, as long as
  *   `name` is a valid identifier. Anything else (`{`, `{ }`, `{1,2}`, …) is kept
  *   as literal text, so JSON-ish or punctuation-heavy source strings survive.
  * - `\{`, `\}` and `\\` are escapes for literal `{`, `}` and `\`.
+ *
+ * Unlike ICU, the apostrophe is not special, so elision languages
+ * (`"l'{article}"`) keep their placeholder.
  *
  * Returns the pattern plus the `input-variable` declarations implied by the
  * referenced placeholder names (deduplicated, in first-seen order).
@@ -70,10 +76,7 @@ export function parsePattern(value: string): {
 
   flush();
 
-  const declarations: Declaration[] = names.map((name) => ({
-    type: "input-variable",
-    name,
-  }));
+  const declarations: Declaration[] = names.map(inputVariable);
 
   return { pattern, declarations };
 }

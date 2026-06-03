@@ -52,6 +52,16 @@ describe("parsePattern", () => {
     expect(pattern).toEqual([{ type: "text", value: "a { b" }]);
   });
 
+  it("leaves an elision apostrophe before a placeholder intact", () => {
+    // The ICU footgun this plain mode avoids: l'{article} keeps the variable.
+    const { pattern, declarations } = parsePattern("l'{article}");
+    expect(pattern).toEqual([
+      { type: "text", value: "l'" },
+      { type: "expression", arg: { type: "variable-reference", name: "article" } },
+    ]);
+    expect(declarations).toEqual([{ type: "input-variable", name: "article" }]);
+  });
+
   it("returns an empty pattern for an empty string", () => {
     const { pattern, declarations } = parsePattern("");
     expect(pattern).toEqual([]);
