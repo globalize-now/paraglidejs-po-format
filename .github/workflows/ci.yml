@@ -1,8 +1,8 @@
 name: CI
 
+# Matrix checks run on PRs. Pushes to main are handled by release.yml (which runs the
+# same checks before publishing), so we don't duplicate the matrix on main here.
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:
