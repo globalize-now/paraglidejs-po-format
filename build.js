@@ -23,8 +23,18 @@ const options = {
   sourcemap: true,
   // gettext-parser's transitive CJS deps (iconv-lite/safer-buffer) do a dynamic
   // `require("buffer")`. In an ESM bundle `require` is undefined, so provide one.
+  //
+  // inlang loads a remote plugin by fetching the module and evaluating it as a
+  // `data:` URL, so `import.meta.url` is then a `data:` URL — which `createRequire`
+  // rejects (ERR_INVALID_ARG_VALUE). Fall back to a real `file:` URL base in that
+  // case. Only built-in requires (`buffer`, `stream`) run at runtime — everything
+  // else is bundled — so the base path is irrelevant to resolution.
   banner: {
-    js: "import { createRequire as __createRequire } from 'module';\nconst require = __createRequire(import.meta.url);",
+    js: [
+      "import { createRequire as __createRequire } from 'module';",
+      "import { pathToFileURL as __pathToFileURL } from 'url';",
+      "const require = __createRequire(import.meta.url.startsWith('file:') ? import.meta.url : __pathToFileURL(process.cwd() + '/').href);",
+    ].join("\n"),
   },
 };
 

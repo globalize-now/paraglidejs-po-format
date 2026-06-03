@@ -158,6 +158,13 @@ npm run build   # bundle to a single ESM dist/index.js + d.ts
 npm run lint    # eslint
 ```
 
+### Example app (real-app e2e)
+
+[`example/`](./example) is a standalone SvelteKit + Playwright app that consumes the
+**published** plugin via its jsdelivr CDN URL (exactly as documented above) and
+asserts the compiled output in a real browser — placeholder interpolation and
+gettext→CLDR plural selection across `en`/`de`/`pl`. See [`example/README.md`](./example/README.md).
+
 ## License
 
 MIT

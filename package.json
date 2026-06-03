@@ -1,6 +1,6 @@
 {
   "name": "@globalize-now/paraglidejs-po-format",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "inlang/Paraglide JS plugin to use gettext PO files as translation inputs.",
   "type": "module",
   "license": "MIT",
