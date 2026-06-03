@@ -9,6 +9,12 @@ const settings = {
   [PLUGIN_KEY]: { pathPattern: "./{locale}.po" },
 } as unknown as ProjectSettings;
 
+const icuSettings = {
+  baseLocale: "en",
+  locales: ["en", "de"],
+  [PLUGIN_KEY]: { pathPattern: "./{locale}.po", messageFormat: "icu" },
+} as unknown as ProjectSettings;
+
 function file(locale: string, po: string) {
   return { locale, content: new TextEncoder().encode(po) };
 }
@@ -83,6 +89,54 @@ describe("importFiles", () => {
     expect(variants[1]!.pattern).toEqual([
       { type: "expression", arg: { type: "variable-reference", name: "count" } },
       { type: "text", value: " apples" },
+    ]);
+  });
+
+  it("treats msgstr as plain placeholders by default (ICU not interpreted)", async () => {
+    const po = ['msgid "apples"', 'msgstr "{count, plural, one {# apple} other {# apples}}"'].join("\n");
+    const { messages, variants } = await importFiles({ files: [file("en", po)], settings });
+
+    // Default `plain` mode: no ICU selectors, the string is kept literal-ish.
+    expect(messages[0]!.selectors).toEqual([]);
+    expect(variants[0]!.matches).toEqual([]);
+    expect(variants).toHaveLength(1);
+  });
+
+  it("keeps an elision apostrophe before a placeholder in plain mode", async () => {
+    const po = ['msgid "the"', 'msgstr "l\'{article}"'].join("\n");
+    const { variants } = await importFiles({ files: [file("fr", po)], settings });
+
+    expect(variants[0]!.pattern).toEqual([
+      { type: "text", value: "l'" },
+      { type: "expression", arg: { type: "variable-reference", name: "article" } },
+    ]);
+  });
+
+  it("parses a singular msgstr written as inline ICU plural (messageFormat: icu)", async () => {
+    const po = ['msgid "apples"', 'msgstr "{count, plural, one {# apple} other {# apples}}"'].join("\n");
+    const { bundles, messages, variants } = await importFiles({ files: [file("en", po)], settings: icuSettings });
+
+    expect(messages[0]!.selectors).toEqual([{ type: "variable-reference", name: "countPlural" }]);
+    expect(bundles[0]!.declarations.map((d) => `${d.type}:${d.name}`)).toEqual([
+      "input-variable:count",
+      "local-variable:countPlural",
+    ]);
+    expect(variants.map((v) => v.matches)).toEqual([
+      [{ type: "literal-match", key: "countPlural", value: "one" }],
+      [{ type: "catchall-match", key: "countPlural" }],
+    ]);
+  });
+
+  it("parses a singular msgstr written as inline ICU select (messageFormat: icu)", async () => {
+    const po = ['msgid "stream"', 'msgstr "{g, select, male {his} female {her} other {their}} stream"'].join("\n");
+    const { bundles, messages, variants } = await importFiles({ files: [file("en", po)], settings: icuSettings });
+
+    expect(messages[0]!.selectors).toEqual([{ type: "variable-reference", name: "g" }]);
+    expect(bundles[0]!.declarations).toEqual([{ type: "input-variable", name: "g" }]);
+    expect(variants.map((v) => v.matches)).toEqual([
+      [{ type: "literal-match", key: "g", value: "male" }],
+      [{ type: "literal-match", key: "g", value: "female" }],
+      [{ type: "catchall-match", key: "g" }],
     ]);
   });
 

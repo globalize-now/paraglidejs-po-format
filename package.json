@@ -40,6 +40,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,json,md}\" \"*.{js,ts,json,md}\""
   },
   "dependencies": {
+    "@formatjs/icu-messageformat-parser": "^2.11.4",
     "gettext-parser": "^9.0.2"
   },
   "devDependencies": {

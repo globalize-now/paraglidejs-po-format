@@ -10,8 +10,14 @@ const settings = {
   [PLUGIN_KEY]: { pathPattern: "./{locale}.po" },
 } as unknown as ProjectSettings;
 
-async function loadProject() {
-  const blob = await newProject({ settings });
+const icuSettings = {
+  baseLocale: "en",
+  locales: ["en", "de"],
+  [PLUGIN_KEY]: { pathPattern: "./{locale}.po", messageFormat: "icu" },
+} as unknown as ProjectSettings;
+
+async function loadProject(projectSettings: ProjectSettings = settings) {
+  const blob = await newProject({ settings: projectSettings });
   return loadProjectInMemory({ blob, providePlugins: [plugin] });
 }
 
@@ -82,6 +88,33 @@ describe("integration with @inlang/sdk", () => {
     const declarationTypes = bundle!.declarations.map((d) => `${d.type}:${d.name}`);
     expect(declarationTypes).toContain("input-variable:count");
     expect(declarationTypes).toContain("local-variable:countPlural");
+    await project.close();
+  });
+
+  it("imports an inline ICU select msgstr that the SDK stores with a direct selector", async () => {
+    const project = await loadProject(icuSettings);
+    // Also confirms the SDK loads a project with `messageFormat: "icu"` set, i.e.
+    // the settings-schema addition validates.
+    expect(await project.errors.get()).toEqual([]);
+    const po = ['msgid "stream"', 'msgstr "{g, select, male {his} female {her} other {their}} stream"'].join("\n");
+
+    await project.importFiles({ pluginKey: PLUGIN_KEY, files: [{ locale: "en", content: enc(po) }] });
+
+    const bundle = await selectBundleNested(project.db).where("bundle.id", "=", "stream").executeTakeFirst();
+    expect(bundle).toBeDefined();
+
+    // The select selector references the input variable directly (no function).
+    // This asserts the SDK accepts and stores that shape; that such a selector
+    // actually *matches* at runtime is anchored by the inlang message-format docs
+    // (e.g. `userGender=male` as a direct selector), not by this round-trip.
+    expect(bundle!.declarations.map((d) => `${d.type}:${d.name}`)).toEqual(["input-variable:g"]);
+
+    const message = bundle!.messages[0]!;
+    expect(message.selectors).toEqual([{ type: "variable-reference", name: "g" }]);
+
+    const matches = message.variants.map((v) => v.matches);
+    expect(matches).toContainEqual([{ type: "literal-match", key: "g", value: "male" }]);
+    expect(matches).toContainEqual([{ type: "catchall-match", key: "g" }]);
     await project.close();
   });
 });
